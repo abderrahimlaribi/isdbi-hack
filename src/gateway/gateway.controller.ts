@@ -5,11 +5,14 @@ import {
   UploadedFile,
   UseInterceptors,
   Body,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GatewayService } from './gateway.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('gateway')
+@UseGuards(JwtAuthGuard)
 export class GatewayController {
   constructor(private readonly gatewayService: GatewayService) {}
 

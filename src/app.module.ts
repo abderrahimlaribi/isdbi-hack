@@ -1,9 +1,19 @@
 import { Module } from '@nestjs/common';
-import { GatewayController } from './gateway/gateway.controller';
-import { GatewayService } from './gateway/gateway.service';
+import { MongooseModule } from '@nestjs/mongoose';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { GatewayModule } from './gateway/gateway.module';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
-  controllers: [GatewayController],
-  providers: [GatewayService],
+  imports: [
+    MongooseModule.forRoot('mongodb://localhost:27017/nestjs-gateway'),
+    GatewayModule,
+    AuthModule,
+    UsersModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

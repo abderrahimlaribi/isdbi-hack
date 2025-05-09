@@ -83,8 +83,70 @@ The API Gateway runs on port 3000 by default. You can access it at `http://local
 
 ### Available Routes
 
-#### POST /gateway/:service
-Handles requests to different services with file upload support.
+#### Authentication Endpoints
+
+##### POST /auth/register
+Register a new user and get authentication token.
+
+**Request Body:**
+```json
+{
+  "username": "string",
+  "email": "string",
+  "password": "string (min length: 6)"
+}
+```
+
+**Response:**
+```json
+{
+  "access_token": "string",
+  "user": {
+    "id": "string",
+    "email": "string",
+    "username": "string"
+  }
+}
+```
+
+##### POST /auth/login
+Login with existing credentials.
+
+**Request Body:**
+```json
+{
+  "email": "string",
+  "password": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "access_token": "string",
+  "user": {
+    "id": "string",
+    "email": "string",
+    "username": "string"
+  }
+}
+```
+
+#### Gateway Endpoints
+
+All gateway endpoints require authentication. Include the JWT token in the Authorization header:
+```
+Authorization: Bearer <your_jwt_token>
+```
+
+##### POST /gateway/:service
+Handles requests to different services with file upload support. Requires authentication.
+
+**Headers:**
+```
+Authorization: Bearer <your_jwt_token>
+Content-Type: multipart/form-data
+```
 
 **Parameters:**
 - `service` (path parameter): The target service to route the request to
@@ -94,11 +156,91 @@ Handles requests to different services with file upload support.
 - `file` (multipart/form-data): File to be uploaded
 - `text` (form-data): Text content to be processed
 
-**Example Request:**
+**Example Requests:**
+
+1. Using cURL:
 ```bash
 curl -X POST http://localhost:3000/gateway/service1 \
+  -H "Authorization: Bearer <your_jwt_token>" \
   -F "file=@/path/to/file" \
   -F "text=your text content"
+```
+
+2. Using Postman:
+- Method: POST
+- URL: `http://localhost:3000/gateway/service1`
+- Headers:
+  ```
+  Authorization: Bearer <your_jwt_token>
+  ```
+- Body (form-data):
+  - Key: `file` (Type: File) - Select your file
+  - Key: `text` (Type: Text) - Enter your text content
+
+3. Using JavaScript/Fetch:
+```javascript
+const formData = new FormData();
+formData.append('file', fileInput.files[0]);
+formData.append('text', 'your text content');
+
+fetch('http://localhost:3000/gateway/service1', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer <your_jwt_token>'
+  },
+  body: formData
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+4. Using Axios:
+```javascript
+const formData = new FormData();
+formData.append('file', fileInput.files[0]);
+formData.append('text', 'your text content');
+
+axios.post('http://localhost:3000/gateway/service1', formData, {
+  headers: {
+    'Authorization': 'Bearer <your_jwt_token>',
+    'Content-Type': 'multipart/form-data'
+  }
+})
+.then(response => console.log(response.data))
+.catch(error => console.error(error));
+```
+
+**Response:**
+```json
+{
+  "text": "combined text content from input and parsed file"
+}
+```
+
+**Error Responses:**
+
+1. Unauthorized (No Token):
+```json
+{
+  "statusCode": 401,
+  "message": "Unauthorized"
+}
+```
+
+2. Invalid Token:
+```json
+{
+  "statusCode": 401,
+  "message": "Invalid token"
+}
+```
+
+3. Invalid Service:
+```json
+{
+  "statusCode": 400,
+  "message": "Invalid service name"
+}
 ```
 
 ### Service Endpoints
@@ -154,3 +296,31 @@ npm run test:cov
 ## License
 
 This project is licensed under the UNLICENSED License - see the package.json file for details.
+
+### Validation Requirements
+
+#### User Registration and Login
+- **Username:**
+  - Required
+  - Must be a string
+- **Email:**
+  - Required
+  - Must be a valid email address (RFC 5322 compliant)
+  - Must be unique in the system
+- **Password:**
+  - Required
+  - Must be a string
+  - Minimum length: 6 characters
+
+#### Example Validation Errors
+```json
+{
+  "statusCode": 400,
+  "message": [
+    "Username is required",
+    "Please provide a valid email address",
+    "Password must be at least 6 characters long"
+  ],
+  "error": "Bad Request"
+}
+```
